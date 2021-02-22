@@ -1,23 +1,26 @@
 import telebot
 from config import TOKEN
-from extentions import GetCurrency, APIException, Price, keys
+from extentions import GetCurrency, APIException, Price
 
-
+# Пустой список валют
+keys = {}
 
 
 bot = telebot.TeleBot(TOKEN)
 
+#заполняем список доступных валют c ресурса Dadata.ru
 try:
-    GetCurrency.update_currency()   #заполняем список доступных валют c ресурса Dadata.ru
+    keys = GetCurrency.update_currency()
 except Exception:
     keys = {
-    'доллар':'USD',
-    'рубль':'RUB',
-    'евро':'EUR'
+            'доллар':'USD',
+            'рубль':'RUB',
+            'евро':'EUR'
     }
-    # raise APIException(f'Невозможно обновить список валют')
+    # raise APIException(f'Невозможно обновить список всех валют. Список ограничен общеупотребимыми валютами.')
 
 
+# Начало работы бота
 @bot.message_handler(commands = ['start', 'help'])
 def help(message: telebot.types.Message):
     text = 'Для начала работы введите команду боту, без пробелов в формате:\n <имя валюты цену которой необходимо узнать>,\n\
@@ -25,9 +28,8 @@ def help(message: telebot.types.Message):
 <количество первой валюты>\nПример: канадский доллар,российский рубль,100\n\
 \nПросмотреть список доступных валют: /values'
     bot.reply_to(message, text)
-    # Обновление списка валют
 
-
+ # Показ списка валют
 @bot.message_handler(commands = ['values'])
 def values(message: telebot.types.Message):
     text = 'Доступные валюты:'
@@ -44,7 +46,9 @@ def convert(message: telebot.types.Message):
             raise APIException('Некорректное количество параметров, воспользуйтесь командой /help.')
 
         base, quote, amount = value
-        result = Price.get_price(base, quote, amount)
+        base = base.lower()
+        quote = quote.lower()
+        result = Price.get_price(base, quote, amount, keys)
 
     except APIException as e:
         bot.reply_to(message, f'Ошибка пользователя\n{e}')
@@ -55,6 +59,5 @@ def convert(message: telebot.types.Message):
     else:
         text = f'Стоимость {amount} {base} составляет {result} {quote}.'
         bot.send_message(message.chat.id, text)
-
 
 bot.polling()

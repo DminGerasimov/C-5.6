@@ -3,11 +3,10 @@ import requests
 from dadata import Dadata
 import json
 
-keys = {}
-
 class GetCurrency:
     @staticmethod
     def update_currency():
+        keys = {}
         r = requests.get(f'https://api.exchangeratesapi.io/latest?')
         currency_codes = json.loads(r.content)['rates']
         for record in currency_codes:
@@ -16,6 +15,7 @@ class GetCurrency:
                 if result != []:
                     _ =  result[0]['value'].lower()
             keys[_] = record
+        return keys
 
 
 class APIException(Exception):
@@ -23,7 +23,7 @@ class APIException(Exception):
 
 class Price:
     @staticmethod
-    def get_price(base: str, quote: str, amount: str):
+    def get_price(base: str, quote: str, amount: str, keys):
         
         if base == quote:
             raise APIException(f'Невозможно преобразовать валюту {base}')
